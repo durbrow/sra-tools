@@ -149,6 +149,7 @@ static char const option_accept_hard_clip[] = "accept-hard-clip";
 static char const option_allow_multi_map[] = "allow-multi-map";
 static char const option_allow_secondary[] = "make-spots-with-secondary";
 static char const option_defer_secondary[] = "defer-secondary";
+static char const option_no_defer_secondary[] = "no-defer-secondary";
 
 #define OPTION_INPUT option_input
 #define OPTION_OUTPUT option_output
@@ -174,6 +175,7 @@ static char const option_defer_secondary[] = "defer-secondary";
 #define OPTION_ALLOW_MULTI_MAP option_allow_multi_map
 #define OPTION_ALLOW_SECONDARY option_allow_secondary
 #define OPTION_DEFER_SECONDARY option_defer_secondary
+#define OPTION_NO_DEFER_SECONDARY option_no_defer_secondary
 
 #define ALIAS_INPUT  "i"
 #define ALIAS_OUTPUT "o"
@@ -419,7 +421,15 @@ char const * use_allow_secondary[] =
 static
 char const * use_defer_secondary[] =
 {
-    "defer processing of secondary alignments until the end of the file",
+    "defer processing of secondary alignments until all primary alignments have",
+    "been processed; NB. this is the default behavior, this option is a no-op",
+    NULL
+};
+
+static
+char const * use_no_defer_secondary[] =
+{
+    "do NOT defer processing of secondary alignments",
     NULL
 };
 
@@ -458,7 +468,8 @@ OptDef Options[] =
     { OPTION_ACCEPT_HARD_CLIP, NULL, NULL, use_accept_hard_clip, 1, false, false },
     { OPTION_ALLOW_MULTI_MAP, NULL, NULL, use_allow_multi_map, 1, false, false },
     { OPTION_ALLOW_SECONDARY, NULL, NULL, use_allow_secondary, 1, false, false },
-    { OPTION_DEFER_SECONDARY, NULL, NULL, use_defer_secondary, 1, false, false }
+    { OPTION_DEFER_SECONDARY, NULL, NULL, use_defer_secondary, 1, false, false },
+    { OPTION_NO_DEFER_SECONDARY, NULL, NULL, use_no_defer_secondary, 1, false, false }
 };
 
 const char* OptHelpParam[] =
@@ -496,7 +507,8 @@ const char* OptHelpParam[] =
     NULL,				/* allow hard clipping */
     NULL,				/* allow multimapping */
     NULL,				/* allow secondary */
-    NULL				/* defer secondary */
+    NULL,				/* defer secondary */
+    NULL				/* no defer secondary */
 };
 
 rc_t UsageSummary (char const * progname)
@@ -977,11 +989,13 @@ static rc_t main_1(int argc, char *argv[], bool const continuing, unsigned const
         if (rc)
             break;
         G.assembleWithSecondary |= (pcount > 0);
-        
-        rc = ArgsOptionCount (args, OPTION_DEFER_SECONDARY, &pcount);
+
+        G.deferSecondary = true;
+        rc = ArgsOptionCount (args, OPTION_NO_DEFER_SECONDARY, &pcount);
         if (rc)
             break;
-        G.deferSecondary |= (pcount > 0);
+        if (pcount > 0)
+            G.deferSecondary = false;
         
         rc = ArgsOptionCount (args, OPTION_NOMATCH_LOG, &pcount);
         if (rc)
