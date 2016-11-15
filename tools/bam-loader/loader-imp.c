@@ -1750,6 +1750,23 @@ MIXED_BASE_AND_COLOR:
             isPrimary = true;
             wasPromoted = true;
         }
+
+        if (wasInserted) {
+            /* first time spot is seen */
+            if (G.mode == mode_Remap) {
+                (void)PLOGERR(klogErr, (klogErr, rc = RC(rcApp, rcFile, rcReading, rcData, rcInconsistent),
+                                         "Spot '$(name)' is a new spot, not a remapping",
+                                         "name=%s", name));
+                goto LOOP_END;
+            }
+            memset(value, 0, sizeof(*value));
+            value->unmated = !mated;
+            if (isPrimary || G.assembleWithSecondary || G.deferSecondary) {
+                value->pcr_dup = (flags & BAMFlags_IsDuplicate) == 0 ? 0 : 1;
+                value->platform = GetINSDCPlatform(bam, spotGroup);
+                value->primary_is_set = 1;
+            }
+        }
         if (!isPrimary && G.noSecondary)
             goto LOOP_END;
 
@@ -2026,20 +2043,6 @@ MIXED_BASE_AND_COLOR:
         AR_READNO(data) = readNo;
 
         if (wasInserted) {
-            /* first time spot is seen */
-            if (G.mode == mode_Remap) {
-                (void)PLOGERR(klogErr, (klogErr, rc = RC(rcApp, rcFile, rcReading, rcData, rcInconsistent),
-                                         "Spot '$(name)' is a new spot, not a remapping",
-                                         "name=%s", name));
-                goto LOOP_END;
-            }
-            memset(value, 0, sizeof(*value));
-            value->unmated = !mated;
-            if (isPrimary || G.assembleWithSecondary || G.deferSecondary) {
-                value->pcr_dup = (flags & BAMFlags_IsDuplicate) == 0 ? 0 : 1;
-                value->platform = GetINSDCPlatform(bam, spotGroup);
-                value->primary_is_set = 1;
-            }
         }
         else if (isPrimary || G.assembleWithSecondary || G.deferSecondary) {
             /* other times */
